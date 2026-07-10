@@ -1,4 +1,3 @@
-@"
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -36,4 +35,3 @@ app.include_router(api_router)
 @app.get("/health")
 def health():
     return {"status": "ok", "app": settings.APP_NAME, "env": settings.APP_ENV}
-"@ | Set-Content -Path main.py -Encoding utf8
