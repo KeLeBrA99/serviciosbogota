@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.api.v1 import router as api_router
 from app.db.database import engine, Base
-from app.models import user, business
+from app.models import user, business, category, contact, review, subscription
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
