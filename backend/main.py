@@ -7,6 +7,9 @@ from app.api.v1 import router as api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.db.database import engine, Base
+    from app.models import *
+    Base.metadata.create_all(bind=engine)
     print(f"🚀 {settings.APP_NAME} iniciando en modo {settings.APP_ENV}")
     yield
     print("🛑 Servidor detenido")
