@@ -17,7 +17,9 @@ export default function RegisterPage() {
       toast.success("¡Cuenta creada exitosamente!");
       navigate("/registrar-negocio");
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Error al crear la cuenta");
+      const detail = err.response?.data?.detail;
+      const msg = Array.isArray(detail) ? detail[0]?.msg || "Error al crear la cuenta" : detail || "Error al              crear la cuenta";
+   toast.error(msg);
     } finally {
       setLoading(false);
     }
