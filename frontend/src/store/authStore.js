@@ -29,7 +29,8 @@ const useAuthStore = create((set) => ({
     const { data } = await authAPI.register(formData);
     localStorage.setItem("access_token", data.access_token);
     localStorage.setItem("refresh_token", data.refresh_token);
-    const payload = JSON.parse(atob(data.access_token.split(".")[1]));
+    const base64 = data.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(base64));
     const user = { id: payload.sub, role: payload.role };
     localStorage.setItem("user", JSON.stringify(user));
     set({ isAuthenticated: true, user });
