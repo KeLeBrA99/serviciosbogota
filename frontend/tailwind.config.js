@@ -21,6 +21,8 @@ export default {
         display: ["'Syne'", "sans-serif"],
         body: ["'DM Sans'", "sans-serif"],
       },
+      // Permite las clases font-600 / font-700 / font-800 que usa el proyecto
+      fontWeight: { 600: "600", 700: "700", 800: "800" },
     },
   },
   plugins: [],

@@ -1,8 +1,23 @@
-from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    hash_password,
+    verify_password,
+)
 from app.models.user import User
-from app.schemas.auth import RegisterRequest, LoginRequest
-from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
+from app.schemas.auth import ChangePasswordRequest, LoginRequest, RegisterRequest
+
+
+def _tokens_for(user: User) -> dict:
+    return {
+        "access_token": create_access_token(user.id, {"role": user.role.value}),
+        "refresh_token": create_refresh_token(user.id),
+        "token_type": "bearer",
+    }
 
 
 def register_user(db: Session, data: RegisterRequest) -> User:
@@ -35,11 +50,11 @@ def login_user(db: Session, data: LoginRequest) -> dict:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Tu cuenta está desactivada",
         )
-    return {
-        "access_token": create_access_token(user.id, {"role": user.role}),
-        "refresh_token": create_refresh_token(user.id),
-        "token_type": "bearer",
-    }
+    return _tokens_for(user)
+
+
+def tokens_for_user(user: User) -> dict:
+    return _tokens_for(user)
 
 
 def refresh_tokens(db: Session, refresh_token: str) -> dict:
@@ -52,8 +67,11 @@ def refresh_tokens(db: Session, refresh_token: str) -> dict:
     user = db.query(User).filter(User.id == int(payload["sub"])).first()
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no válido")
-    return {
-        "access_token": create_access_token(user.id, {"role": user.role}),
-        "refresh_token": create_refresh_token(user.id),
-        "token_type": "bearer",
-    }
+    return _tokens_for(user)
+
+
+def change_password(db: Session, user: User, data: ChangePasswordRequest) -> None:
+    if not verify_password(data.current_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="La contraseña actual no es correcta")
+    user.hashed_password = hash_password(data.new_password)
+    db.commit()
