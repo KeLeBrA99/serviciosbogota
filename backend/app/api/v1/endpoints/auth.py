@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
@@ -7,9 +7,11 @@ from app.db.database import get_db
 from app.models.user import User
 from app.schemas.auth import (
     ChangePasswordRequest,
+    ForgotPasswordRequest,
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     TokenResponse,
     UserOut,
 )
@@ -18,8 +20,11 @@ from app.services.auth_service import (
     login_user,
     refresh_tokens,
     register_user,
+    reset_password,
+    start_password_reset,
     tokens_for_user,
 )
+from app.services.email_service import send_password_reset_email
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -54,3 +59,28 @@ def update_password(
     current_user: User = Depends(get_current_user),
 ):
     change_password(db, current_user, data)
+
+
+@router.post("/forgot-password")
+@limiter.limit("5/hour")
+def forgot_password(
+    request: Request,
+    data: ForgotPasswordRequest,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """
+    Envía el enlace para restablecer la contraseña. La respuesta es siempre la
+    misma, exista o no la cuenta, para no revelar qué correos están registrados.
+    """
+    result = start_password_reset(db, data.email)
+    if result:
+        user, token = result
+        background.add_task(send_password_reset_email, user.email, user.full_name, token)
+    return {"message": "Si el correo está registrado, te enviamos un enlace para restablecer la contraseña."}
+
+
+@router.post("/reset-password", status_code=204)
+@limiter.limit("10/hour")
+def reset_password_endpoint(request: Request, data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    reset_password(db, data.token, data.new_password)

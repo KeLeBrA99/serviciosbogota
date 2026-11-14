@@ -9,13 +9,14 @@ from app.api.v1 import router as api_router
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.db.database import SessionLocal
-from app.db.init_db import create_tables, seed_admin, seed_categories
+from app.db.init_db import seed_admin, seed_categories
+from app.db.migrations import run_migrations
 from app.services.subscription_service import expire_subscriptions
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_tables()
+    run_migrations()
     db = SessionLocal()
     try:
         seed_categories(db)

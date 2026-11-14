@@ -72,6 +72,25 @@ class ChangePasswordRequest(BaseModel):
         return _validate_password(v)
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def email_lower(cls, v):
+        return v.strip().lower()
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v):
+        return _validate_password(v)
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

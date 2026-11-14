@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_optional_user, get_owned_business
@@ -11,6 +11,7 @@ from app.models.review import Review
 from app.models.user import User
 from app.schemas.review import ReviewCreate, ReviewOut, ReviewResponse
 from app.services.business_service import recalculate_rating
+from app.services.email_service import send_new_review_email
 
 router = APIRouter(prefix="/businesses/{business_id}/reviews", tags=["Reseñas"])
 
@@ -32,6 +33,7 @@ def create_review(
     request: Request,
     business_id: int,
     data: ReviewCreate,
+    background: BackgroundTasks,
     db: Session = Depends(get_db),
     user: Optional[User] = Depends(get_optional_user),
 ):
@@ -53,6 +55,18 @@ def create_review(
     db.commit()
     db.refresh(review)
     recalculate_rating(db, business_id)
+
+    owner = db.query(User).filter(User.id == business.owner_id).first()
+    if owner:
+        background.add_task(
+            send_new_review_email,
+            owner_email=owner.email,
+            business_name=business.name,
+            business_slug=business.slug,
+            author_name=review.author_name,
+            rating=review.rating,
+            comment=review.comment,
+        )
     return review
 
 

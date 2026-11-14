@@ -1,11 +1,15 @@
+from typing import Optional, Tuple
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.security import (
     create_access_token,
+    create_password_reset_token,
     create_refresh_token,
     decode_token,
     hash_password,
+    password_reset_token_matches,
     verify_password,
 )
 from app.models.user import User
@@ -74,4 +78,27 @@ def change_password(db: Session, user: User, data: ChangePasswordRequest) -> Non
     if not verify_password(data.current_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="La contraseña actual no es correcta")
     user.hashed_password = hash_password(data.new_password)
+    db.commit()
+
+
+def start_password_reset(db: Session, email: str) -> Optional[Tuple[User, str]]:
+    """Devuelve (usuario, token) si la cuenta existe y está activa; si no, None."""
+    user = db.query(User).filter(User.email == email).first()
+    if not user or not user.is_active:
+        return None
+    return user, create_password_reset_token(user.id, user.hashed_password)
+
+
+def reset_password(db: Session, token: str, new_password: str) -> None:
+    invalid = HTTPException(
+        status_code=400,
+        detail="El enlace no es válido o ya venció. Solicita uno nuevo.",
+    )
+    payload = decode_token(token)
+    if not payload or payload.get("type") != "reset":
+        raise invalid
+    user = db.query(User).filter(User.id == int(payload["sub"])).first()
+    if not user or not user.is_active or not password_reset_token_matches(payload, user.hashed_password):
+        raise invalid
+    user.hashed_password = hash_password(new_password)
     db.commit()

@@ -7,6 +7,8 @@ import HomePage from "./pages/HomePage";
 import BusinessPage from "./pages/BusinessPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import RegisterBusinessPage from "./pages/RegisterBusinessPage";
 import EditBusinessPage from "./pages/EditBusinessPage";
@@ -51,6 +53,8 @@ export default function App() {
         </Route>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegisterPage />} />
+        <Route path="/recuperar" element={<ForgotPasswordPage />} />
+        <Route path="/restablecer" element={<ResetPasswordPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>

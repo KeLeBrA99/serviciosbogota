@@ -50,7 +50,10 @@ export default function LoginPage() {
               <input id="login-email" type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tu@correo.com" className="input" required />
             </div>
             <div>
-              <label className="label" htmlFor="login-password">Contraseña</label>
+              <div className="flex items-baseline justify-between">
+                <label className="label" htmlFor="login-password">Contraseña</label>
+                <Link to="/recuperar" className="text-brand-400 hover:text-brand-300 text-xs">¿La olvidaste?</Link>
+              </div>
               <input id="login-password" type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" className="input" required />
             </div>
             <button type="submit" disabled={loading} className="btn-primary w-full">

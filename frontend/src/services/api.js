@@ -37,7 +37,8 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
-    const isAuthCall = original?.url?.startsWith("/auth/login") || original?.url?.startsWith("/auth/register");
+    const isAuthCall = ["/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password"]
+      .some((path) => original?.url?.startsWith(path));
     if (error.response?.status === 401 && original && !original._retry && !isAuthCall) {
       original._retry = true;
       if (localStorage.getItem("refresh_token")) {
@@ -64,6 +65,8 @@ export const authAPI = {
   login: (data) => api.post("/auth/login", data),
   me: () => api.get("/auth/me"),
   changePassword: (data) => api.post("/auth/change-password", data),
+  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
+  resetPassword: (token, newPassword) => api.post("/auth/reset-password", { token, new_password: newPassword }),
 };
 
 // ── Negocios ──

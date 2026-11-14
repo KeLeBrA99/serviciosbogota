@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     WOMPI_INTEGRITY_SECRET: str = ""
     WOMPI_BASE_URL: str = "https://sandbox.wompi.co/v1"
 
+    # Correo transaccional por API HTTPS (Railway bloquea SMTP en el plan Hobby).
+    # EMAIL_PROVIDER: "resend" o "brevo". Vacío = no se envían correos.
+    EMAIL_PROVIDER: str = ""
+    EMAIL_API_KEY: str = ""
+    EMAIL_FROM: str = ""  # Ej: ServiciosBogotá <notificaciones@tudominio.co>
+    PASSWORD_RESET_EXPIRE_MINUTES: int = 30
+
     # Cloudinary
     CLOUDINARY_CLOUD_NAME: str = ""
     CLOUDINARY_API_KEY: str = ""
@@ -54,6 +61,10 @@ class Settings(BaseSettings):
     @property
     def wompi_enabled(self) -> bool:
         return bool(self.WOMPI_PUBLIC_KEY) and "xxxx" not in self.WOMPI_PUBLIC_KEY
+
+    @property
+    def email_enabled(self) -> bool:
+        return self.EMAIL_PROVIDER.lower() in ("resend", "brevo") and bool(self.EMAIL_API_KEY and self.EMAIL_FROM)
 
     @property
     def cloudinary_enabled(self) -> bool:

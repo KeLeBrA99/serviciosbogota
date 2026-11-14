@@ -12,12 +12,14 @@ os.environ.update(
     WOMPI_EVENTS_SECRET="test_events_secret",
     WOMPI_INTEGRITY_SECRET="test_integrity_secret",
     CLOUDINARY_CLOUD_NAME="",
+    EMAIL_PROVIDER="",
     ADMIN_EMAIL="admin@test.co",
     ADMIN_PASSWORD="AdminPass123",
 )
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 
 from app.core.limiter import limiter
 from app.db.database import Base, engine
@@ -38,10 +40,16 @@ BUSINESS = {
 }
 
 
+def reset_database():
+    Base.metadata.drop_all(bind=engine)
+    with engine.begin() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
+
+
 @pytest.fixture()
 def client():
-    Base.metadata.drop_all(bind=engine)
-    with TestClient(app) as c:  # el lifespan crea tablas y datos semilla
+    reset_database()
+    with TestClient(app) as c:  # el lifespan aplica las migraciones y los datos semilla
         yield c
 
 
@@ -72,3 +80,18 @@ def business(client, owner):
     r = client.post("/api/v1/businesses", json=BUSINESS, headers=owner)
     assert r.status_code == 201, r.text
     return r.json()
+
+
+@pytest.fixture()
+def outbox(monkeypatch):
+    """Captura los correos en vez de enviarlos."""
+    from app.services import email_service
+
+    sent = []
+
+    def fake_send(to, subject, html, text, reply_to=None):
+        sent.append({"to": to, "subject": subject, "html": html, "text": text, "reply_to": reply_to})
+        return True
+
+    monkeypatch.setattr(email_service, "send_email", fake_send)
+    return sent

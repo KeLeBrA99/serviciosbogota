@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Union
 
@@ -34,3 +35,26 @@ def decode_token(token: str) -> Optional[dict]:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
         return None
+
+
+def _password_fingerprint(hashed_password: str) -> str:
+    return hashlib.sha256(hashed_password.encode()).hexdigest()[:16]
+
+
+def create_password_reset_token(user_id: int, hashed_password: str) -> str:
+    """
+    Token de un solo uso para restablecer la contraseña. Incluye una huella de
+    la contraseña actual: en cuanto esta cambia, el token deja de ser válido.
+    """
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.PASSWORD_RESET_EXPIRE_MINUTES)
+    payload = {
+        "sub": str(user_id),
+        "exp": expire,
+        "type": "reset",
+        "pwd": _password_fingerprint(hashed_password),
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def password_reset_token_matches(payload: dict, hashed_password: str) -> bool:
+    return payload.get("type") == "reset" and payload.get("pwd") == _password_fingerprint(hashed_password)

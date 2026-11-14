@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.security import hash_password
-from app.db.database import Base, SessionLocal, engine
+from app.db.database import SessionLocal
+from app.db.migrations import run_migrations
 from app.models import Category, User, UserRole
 
 DEFAULT_CATEGORIES = [
@@ -25,10 +26,6 @@ DEFAULT_CATEGORIES = [
     {"name": "Mascotas", "slug": "mascotas", "icon": "🐾", "sort_order": 11},
     {"name": "Jardinería", "slug": "jardineria", "icon": "🌿", "sort_order": 12},
 ]
-
-
-def create_tables():
-    Base.metadata.create_all(bind=engine)
 
 
 def seed_categories(db: Session) -> int:
@@ -66,7 +63,7 @@ def seed_admin(db: Session) -> bool:
 
 
 def init():
-    create_tables()
+    run_migrations()
     db = SessionLocal()
     try:
         created = seed_categories(db)

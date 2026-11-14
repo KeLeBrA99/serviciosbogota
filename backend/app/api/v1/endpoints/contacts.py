@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_owned_business
@@ -8,13 +8,20 @@ from app.models.business import Business, BusinessStatus
 from app.models.contact import ContactRequest
 from app.models.user import User
 from app.schemas.contact import ContactCreate, ContactOut, ContactStatusUpdate
+from app.services.email_service import send_new_contact_email
 
 router = APIRouter(tags=["Contactos"])
 
 
 @router.post("/businesses/{business_id}/contact", response_model=ContactOut, status_code=201)
 @limiter.limit("10/hour")
-def send_contact(request: Request, business_id: int, data: ContactCreate, db: Session = Depends(get_db)):
+def send_contact(
+    request: Request,
+    business_id: int,
+    data: ContactCreate,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     business = (
         db.query(Business)
         .filter(Business.id == business_id, Business.status == BusinessStatus.active)
@@ -27,6 +34,19 @@ def send_contact(request: Request, business_id: int, data: ContactCreate, db: Se
     business.contact_count = (business.contact_count or 0) + 1
     db.commit()
     db.refresh(contact)
+
+    # El correo sale después de responder, para no hacer esperar al cliente.
+    owner = db.query(User).filter(User.id == business.owner_id).first()
+    if owner:
+        background.add_task(
+            send_new_contact_email,
+            owner_email=owner.email,
+            business_name=business.name,
+            client_name=contact.client_name,
+            message=contact.message,
+            client_phone=contact.client_phone,
+            client_email=contact.client_email,
+        )
     return contact
 
 
