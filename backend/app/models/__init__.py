@@ -4,6 +4,7 @@ from app.models.business import Business, BusinessStatus
 from app.models.subscription import Subscription, PlanType, SubscriptionStatus, PLAN_PRICES, PLAN_FEATURES
 from app.models.review import Review
 from app.models.contact import ContactRequest, ContactStatus
+from app.models.event import BusinessEvent, EVENT_TYPES
 
 __all__ = [
     "User", "UserRole",
@@ -12,4 +13,5 @@ __all__ = [
     "Subscription", "PlanType", "SubscriptionStatus", "PLAN_PRICES", "PLAN_FEATURES",
     "Review",
     "ContactRequest", "ContactStatus",
+    "BusinessEvent", "EVENT_TYPES",
 ]

@@ -2,4 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+# --proxy-headers hace que FastAPI respete el HTTPS del proxy de Railway
+# (evita redirecciones a http:// y el error de "mixed content" en el frontend).
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips=\"*\""
+healthcheckPath = "/health"

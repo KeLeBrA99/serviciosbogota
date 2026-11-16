@@ -1,25 +1,36 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import useAuthStore from "../store/authStore";
+import { useEffect, useState } from "react";
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import useAuthStore from "../store/authStore";
+import usePageTitle from "../hooks/usePageTitle";
+import { errorMessage } from "../lib/utils";
 
 export default function LoginPage() {
+  usePageTitle("Ingresar");
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const { login } = useAuthStore();
+  const { login, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [params] = useSearchParams();
+  const from = location.state?.from || "/dashboard";
+
+  useEffect(() => {
+    if (params.get("expirada")) toast("Tu sesión expiró. Ingresa de nuevo.", { id: "expirada" });
+  }, [params]);
+
+  if (isAuthenticated && !loading) return <Navigate to={from} replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(form.email, form.password);
-      toast.success("¡Bienvenido!");
-      navigate("/dashboard");
+      const user = await login(form.email, form.password);
+      toast.success(`¡Hola, ${user.full_name.split(" ")[0]}!`);
+      navigate(from, { replace: true });
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Correo o contraseña incorrectos");
-    } finally {
-      setLoading(false);
+      toast.error(errorMessage(err, "Correo o contraseña incorrectos"));
+      setLoading(false); // en caso de éxito no se reactiva: la página ya está navegando
     }
   };
 
@@ -35,21 +46,24 @@ export default function LoginPage() {
         <div className="card p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-zinc-400 text-xs font-display font-600 block mb-1.5">Correo electrónico</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tu@correo.com" className="input" required />
+              <label className="label" htmlFor="login-email">Correo electrónico</label>
+              <input id="login-email" type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tu@correo.com" className="input" required />
             </div>
             <div>
-              <label className="text-zinc-400 text-xs font-display font-600 block mb-1.5">Contraseña</label>
-              <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" className="input" required />
+              <div className="flex items-baseline justify-between">
+                <label className="label" htmlFor="login-password">Contraseña</label>
+                <Link to="/recuperar" className="text-brand-400 hover:text-brand-300 text-xs">¿La olvidaste?</Link>
+              </div>
+              <input id="login-password" type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" className="input" required />
             </div>
-            <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+            <button type="submit" disabled={loading} className="btn-primary w-full">
               {loading ? "Ingresando..." : "Ingresar"}
             </button>
           </form>
         </div>
         <p className="text-center text-zinc-500 text-sm mt-4">
           ¿No tienes cuenta?{" "}
-          <Link to="/registro" className="text-brand-400 hover:text-brand-300">Regístrate gratis</Link>
+          <Link to="/registro" state={location.state} className="text-brand-400 hover:text-brand-300">Regístrate gratis</Link>
         </p>
       </div>
     </div>

@@ -1,56 +1,30 @@
 # ServiciosBogotá — Backend
 
-API REST con FastAPI + MySQL para el directorio de servicios locales.
+API REST con FastAPI + SQLAlchemy. La guía de instalación y las variables de entorno están en el [README principal](../README.md).
 
-## Setup local
-
-```bash
-# 1. Clonar e ir a la carpeta
-cd backend
-
-# 2. Crear entorno virtual
-python -m venv venv
-source venv/bin/activate        # Linux/Mac
-venv\Scripts\activate           # Windows
-
-# 3. Instalar dependencias
-pip install -r requirements.txt
-
-# 4. Configurar variables de entorno
-cp .env.example .env
-# Edita .env con tus credenciales de MySQL
-
-# 5. Inicializar base de datos (crea tablas + datos semilla)
-python -m app.db.init_db
-
-# 6. Correr servidor de desarrollo
-uvicorn main:app --reload --port 8000
-```
-
-## Documentación API
-
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- Documentación interactiva: `/docs` (Swagger) y `/redoc`
+- Salud: `/health`
 
 ## Estructura
 
 ```
 app/
-├── api/v1/endpoints/   # Rutas HTTP
-├── core/               # Config, JWT, dependencias
-├── db/                 # Conexión y seed
+├── api/v1/endpoints/   # Rutas HTTP (auth, businesses, reviews, contacts, payments, admin)
+├── core/               # Configuración, JWT, dependencias, límite de peticiones
+├── db/                 # Conexión, migraciones y datos semilla (categorías, admin inicial)
 ├── models/             # Tablas SQLAlchemy
 ├── schemas/            # Validación Pydantic
-└── services/           # Lógica de negocio
+└── services/           # Lógica de negocio (negocios, suscripciones, Wompi, imágenes, correo)
+alembic/versions/       # Migraciones de la base de datos
+tests/                  # Pruebas de API con pytest
 ```
 
-## Variables de entorno necesarias
+## Convenciones
 
-Ver `.env.example` para la lista completa.
-
-## Deploy en Railway
-
-1. Conectar repositorio GitHub a Railway
-2. Añadir las variables de entorno del `.env.example`
-3. Railway detecta automáticamente FastAPI y despliega
-4. Añadir plugin MySQL en Railway y copiar `DATABASE_URL`
+- Las rutas de colección se declaran con `""` (sin barra final) para evitar redirecciones 307, que detrás del proxy de Railway terminaban en `http://` y el navegador las bloqueaba.
+- Los endpoints públicos de escritura (login, registro, reseñas, contacto) tienen límite de peticiones por IP.
+- La activación de planes es idempotente por id de transacción de Wompi.
+- Los correos se envían en segundo plano después de responder; si el proveedor falla, la petición no se ve afectada.
+- El enlace para restablecer la contraseña es de un solo uso y vence a los 30 minutos.
+- Cada hora una tarea en segundo plano vence los planes y envía los recordatorios de vencimiento; no hace falta un cron externo, pero el servicio debe estar siempre encendido (sin "app sleeping" en Railway).
+- Los clics en WhatsApp y en llamar se guardan en `business_events`; los del dueño y los de un admin no cuentan.

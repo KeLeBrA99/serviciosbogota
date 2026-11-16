@@ -62,6 +62,8 @@ class Subscription(Base):
     started_at = Column(DateTime(timezone=True), nullable=True)
     expires_at = Column(DateTime(timezone=True), nullable=True)
     cancelled_at = Column(DateTime(timezone=True), nullable=True)
+    # Cuándo se avisó al dueño que el plan está por vencer (se limpia al renovar)
+    expiry_notified_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
