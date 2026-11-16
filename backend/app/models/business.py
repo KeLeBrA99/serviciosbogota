@@ -84,3 +84,4 @@ class Business(Base):
     reviews = relationship("Review", back_populates="business", cascade="all, delete-orphan")
     subscription = relationship("Subscription", back_populates="business", uselist=False)
     contacts = relationship("ContactRequest", back_populates="business", cascade="all, delete-orphan")
+    events = relationship("BusinessEvent", cascade="all, delete-orphan")

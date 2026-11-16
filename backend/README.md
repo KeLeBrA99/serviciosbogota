@@ -26,3 +26,5 @@ tests/                  # Pruebas de API con pytest
 - La activación de planes es idempotente por id de transacción de Wompi.
 - Los correos se envían en segundo plano después de responder; si el proveedor falla, la petición no se ve afectada.
 - El enlace para restablecer la contraseña es de un solo uso y vence a los 30 minutos.
+- Cada hora una tarea en segundo plano vence los planes y envía los recordatorios de vencimiento; no hace falta un cron externo, pero el servicio debe estar siempre encendido (sin "app sleeping" en Railway).
+- Los clics en WhatsApp y en llamar se guardan en `business_events`; los del dueño y los de un admin no cuentan.

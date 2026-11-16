@@ -230,12 +230,13 @@ function BusinessDetail({ slug }) {
                   <a
                     href={whatsappLink(business.whatsapp, `Hola, vi ${business.name} en ServiciosBogotá y quisiera más información.`)}
                     target="_blank" rel="noreferrer"
+                    onClick={() => businessAPI.track(business.id, "whatsapp")}
                     className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-semibold text-sm rounded-lg py-2.5 transition-colors"
                   >
                     💬 Escribir por WhatsApp
                   </a>
                 )}
-                <a href={telLink(business.phone)} className="btn-outline w-full text-sm">📞 {business.phone}</a>
+                <a href={telLink(business.phone)} onClick={() => businessAPI.track(business.id, "call")} className="btn-outline w-full text-sm">📞 {business.phone}</a>
               </div>
               <div className="space-y-2 text-sm">
                 {business.email && (

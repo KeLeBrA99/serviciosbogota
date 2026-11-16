@@ -1,5 +1,6 @@
 import re
 import unicodedata
+from datetime import timedelta
 from typing import Optional
 
 from fastapi import HTTPException
@@ -8,11 +9,13 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.business import Business, BusinessStatus
 from app.models.category import Category
+from app.models.contact import ContactRequest
+from app.models.event import BusinessEvent
 from app.models.review import Review
 from app.models.subscription import PLAN_FEATURES, PlanType, Subscription, SubscriptionStatus
 from app.models.user import User
 from app.schemas.business import BusinessCreate, BusinessUpdate
-from app.services.subscription_service import expire_subscriptions_if_due
+from app.services.subscription_service import _utcnow, expire_subscriptions_if_due
 
 FREE_PHOTOS_LIMIT = PLAN_FEATURES[PlanType.basic]["photos_limit"]
 
@@ -187,3 +190,36 @@ def recalculate_rating(db: Session, business_id: int) -> None:
         {"rating_avg": round(float(result.avg or 0), 1), "rating_count": result.count or 0}
     )
     db.commit()
+
+
+def record_event(db: Session, business_id: int, event_type: str) -> None:
+    db.add(BusinessEvent(business_id=business_id, type=event_type, created_at=_utcnow()))
+    db.commit()
+
+
+def business_stats(db: Session, business_id: int, days: int = 30) -> dict:
+    """Actividad reciente del perfil: es lo que el dueño mira para decidir si renueva."""
+    since = _utcnow() - timedelta(days=days)
+
+    def clicks(event_type: str) -> int:
+        return (
+            db.query(func.count(BusinessEvent.id))
+            .filter(
+                BusinessEvent.business_id == business_id,
+                BusinessEvent.type == event_type,
+                BusinessEvent.created_at >= since,
+            )
+            .scalar()
+        )
+
+    return {
+        "days": days,
+        "whatsapp_clicks": clicks("whatsapp"),
+        "call_clicks": clicks("call"),
+        "contacts": db.query(func.count(ContactRequest.id))
+        .filter(ContactRequest.business_id == business_id, ContactRequest.created_at >= since)
+        .scalar(),
+        "reviews": db.query(func.count(Review.id))
+        .filter(Review.business_id == business_id, Review.created_at >= since)
+        .scalar(),
+    }

@@ -16,7 +16,11 @@ from app.schemas.business import AdminBusinessOut, PaginatedAdminBusinesses
 from app.schemas.payment import ManualSubscription
 from app.schemas.review import AdminReviewOut
 from app.services.business_service import recalculate_rating
-from app.services.subscription_service import activate_subscription, expire_subscriptions
+from app.services.subscription_service import (
+    activate_subscription,
+    expire_subscriptions,
+    run_subscription_sweep,
+)
 
 router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(get_current_admin)])
 
@@ -130,7 +134,8 @@ def manual_subscription(business_id: int, data: ManualSubscription, db: Session 
 
 @router.post("/subscriptions/expire")
 def run_expiration(db: Session = Depends(get_db)):
-    return {"expired": expire_subscriptions(db)}
+    """Vence planes y envía recordatorios ahora mismo (también corre solo cada hora)."""
+    return run_subscription_sweep(db)
 
 
 @router.get("/users", response_model=list[UserOut])

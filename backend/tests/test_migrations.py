@@ -1,9 +1,10 @@
+from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
 from sqlalchemy import inspect, text
 
 from app.db.database import Base, engine
-from app.db.migrations import run_migrations
+from app.db.migrations import BASELINE_REVISION, alembic_config, run_migrations
 from tests.conftest import reset_database
 
 
@@ -27,9 +28,11 @@ def test_migrations_build_the_same_schema_as_the_models():
 
 def test_existing_database_is_stamped_not_recreated():
     """Producción ya tiene las tablas (create_all): no deben recrearse ni perder datos."""
+    # Se reproduce la base de producción: el esquema inicial, sin tabla de versiones.
     reset_database()
-    Base.metadata.create_all(bind=engine)
+    command.upgrade(alembic_config(), BASELINE_REVISION)
     with engine.begin() as conn:
+        conn.execute(text("DROP TABLE alembic_version"))
         conn.execute(text("INSERT INTO categories (name, slug, icon) VALUES ('Prueba', 'prueba', 'x')"))
 
     run_migrations()
@@ -37,5 +40,8 @@ def test_existing_database_is_stamped_not_recreated():
     assert "alembic_version" in inspect(engine).get_table_names()
     with engine.connect() as conn:
         assert conn.execute(text("SELECT COUNT(*) FROM categories")).scalar() == 1
+    # Las migraciones posteriores sí se aplican sobre esa base
+    assert "business_events" in inspect(engine).get_table_names()
+    assert "expiry_notified_at" in {c["name"] for c in inspect(engine).get_columns("subscriptions")}
     run_migrations()  # volver a arrancar no cambia nada
     assert _schema_diff() == []

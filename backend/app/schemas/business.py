@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -300,3 +300,15 @@ class PaginatedAdminBusinesses(BaseModel):
     page: int
     pages: int
     per_page: int
+
+
+class TrackEvent(BaseModel):
+    type: Literal["whatsapp", "call"]
+
+
+class BusinessStats(BaseModel):
+    days: int
+    whatsapp_clicks: int
+    call_clicks: int
+    contacts: int
+    reviews: int

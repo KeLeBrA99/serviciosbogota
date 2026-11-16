@@ -177,3 +177,42 @@ def send_password_reset_email(to: str, full_name: str, token: str) -> bool:
         "Si no fuiste tú, ignora este correo: tu contraseña no cambia."
     )
     return send_email(to, "Restablece tu contraseña de ServiciosBogotá", html, text)
+
+
+def send_plan_expiring_email(
+    owner_email: str, business_name: str, business_id: int, plan_name: str, expires_on: str, days_left: int
+) -> bool:
+    """Recordatorio antes de que venza el plan."""
+    link = _frontend(f"/planes?negocio={business_id}")
+    when = "hoy" if days_left <= 0 else "mañana" if days_left == 1 else f"en {days_left} días"
+    html = _layout(
+        f"Tu plan {plan_name} vence {when}",
+        f"<p>El plan {escape(plan_name)} de <strong>{escape(business_name)}</strong> está activo hasta el "
+        f"{escape(expires_on)}.</p>"
+        "<p>La renovación no es automática. Si renuevas antes de esa fecha, los 30 días nuevos se suman "
+        "al tiempo que te queda.</p>",
+        ("Renovar mi plan", link),
+    )
+    text = (
+        f"El plan {plan_name} de {business_name} vence {when} ({expires_on}).\n\n"
+        "La renovación no es automática. Si renuevas antes, los 30 días nuevos se suman al tiempo que te queda.\n\n"
+        f"Renovar: {link}"
+    )
+    return send_email(owner_email, f"Tu plan {plan_name} vence {when} · {business_name}", html, text)
+
+
+def send_plan_expired_email(owner_email: str, business_name: str, business_id: int, plan_name: str) -> bool:
+    link = _frontend(f"/planes?negocio={business_id}")
+    html = _layout(
+        f"Tu plan {plan_name} venció",
+        f"<p>El plan {escape(plan_name)} de <strong>{escape(business_name)}</strong> terminó hoy.</p>"
+        "<p>Tu perfil sigue publicado, pero ya no tiene los beneficios del plan. "
+        "Puedes reactivarlo cuando quieras.</p>",
+        ("Reactivar mi plan", link),
+    )
+    text = (
+        f"El plan {plan_name} de {business_name} terminó hoy.\n\n"
+        "Tu perfil sigue publicado, pero ya no tiene los beneficios del plan.\n\n"
+        f"Reactivar: {link}"
+    )
+    return send_email(owner_email, f"Tu plan {plan_name} venció · {business_name}", html, text)

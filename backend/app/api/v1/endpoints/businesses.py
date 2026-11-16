@@ -1,25 +1,31 @@
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_optional_user, get_owned_business
+from app.core.limiter import limiter
 from app.db.database import get_db
+from app.models.business import Business, BusinessStatus
 from app.models.user import User
 from app.schemas.business import (
     BusinessCreate,
     BusinessOut,
+    BusinessStats,
     BusinessUpdate,
     PaginatedBusinesses,
     PhotoDelete,
+    TrackEvent,
 )
 from app.services.business_service import (
+    business_stats,
     create_business,
     delete_business,
     get_business_by_slug,
     get_businesses,
     get_my_businesses,
     photos_limit,
+    record_event,
     update_business,
 )
 from app.services.upload_service import upload_image
@@ -88,6 +94,40 @@ def delete(
 ):
     business = get_owned_business(db, business_id, current_user)
     delete_business(db, business)
+
+
+# ── Actividad del perfil ──
+
+@router.post("/{business_id}/track", status_code=204)
+@limiter.limit("30/hour")
+def track(
+    request: Request,
+    business_id: int,
+    data: TrackEvent,
+    db: Session = Depends(get_db),
+    viewer: Optional[User] = Depends(get_optional_user),
+):
+    """Registra un clic en WhatsApp o en llamar desde el perfil público."""
+    business = (
+        db.query(Business)
+        .filter(Business.id == business_id, Business.status == BusinessStatus.active)
+        .first()
+    )
+    if not business:
+        raise HTTPException(status_code=404, detail="Negocio no encontrado")
+    # Los clics del propio dueño o de un admin no cuentan.
+    if viewer is None or (viewer.id != business.owner_id and viewer.role.value != "admin"):
+        record_event(db, business_id, data.type)
+
+
+@router.get("/{business_id}/stats", response_model=BusinessStats)
+def stats(
+    business_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    get_owned_business(db, business_id, current_user)
+    return business_stats(db, business_id)
 
 
 # ── Imágenes ──

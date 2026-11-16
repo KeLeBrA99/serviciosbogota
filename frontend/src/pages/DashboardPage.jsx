@@ -33,6 +33,45 @@ function PlanSummary({ business }) {
   );
 }
 
+function RecentActivity({ business }) {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    businessAPI.stats(business.id).then(({ data }) => setStats(data)).catch(() => {});
+  }, [business.id]);
+
+  const items = [
+    ["💬", stats?.whatsapp_clicks, "Clics en WhatsApp"],
+    ["📞", stats?.call_clicks, "Clics en llamar"],
+    ["✉️", stats?.contacts, "Solicitudes"],
+    ["⭐", stats?.reviews, "Reseñas nuevas"],
+  ];
+  const total = stats ? stats.whatsapp_clicks + stats.call_clicks + stats.contacts : null;
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3 mb-2">
+        <h3 className="font-display font-700 text-white text-sm">Últimos 30 días</h3>
+        {total !== null && (
+          <p className="text-zinc-500 text-xs">
+            {total === 0
+              ? "Aún nadie te ha contactado desde tu perfil"
+              : `${total} ${total === 1 ? "intento de contacto" : "intentos de contacto"} desde tu perfil`}
+          </p>
+        )}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {items.map(([icon, value, label]) => (
+          <div key={label} className="p-3 bg-zinc-800/50 rounded-lg text-center">
+            <div className="font-display font-700 text-white text-xl">{icon} {value ?? "–"}</div>
+            <div className="text-zinc-500 text-xs mt-0.5">{label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Contacts({ business }) {
   const [contacts, setContacts] = useState(null);
 
@@ -213,7 +252,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-3 gap-4 p-4 bg-zinc-800/50 rounded-lg">
               {[
                 ["👁", business.view_count, "Visitas al perfil"],
-                ["📞", business.contact_count, "Solicitudes"],
+                ["✉️", business.contact_count, "Solicitudes en total"],
                 ["⭐", business.rating_count > 0 ? business.rating_avg.toFixed(1) : "—", `${business.rating_count} ${business.rating_count === 1 ? "reseña" : "reseñas"}`],
               ].map(([icon, val, label]) => (
                 <div key={label} className="text-center">
@@ -223,6 +262,8 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+
+            <RecentActivity key={business.id} business={business} />
 
             <PlanSummary business={business} />
 

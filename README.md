@@ -10,8 +10,8 @@ Directorio de servicios locales para Bogotá: los vecinos buscan negocios por ca
 ## Funcionalidades
 
 - **Público:** búsqueda por texto, categoría y localidad (filtros en la URL), perfil del negocio con fotos, horario, WhatsApp, reseñas y formulario de contacto.
-- **Dueños de negocio:** registro, crear/editar/eliminar negocios, logo y fotos (Cloudinary), horario de atención, bandeja de solicitudes, respuesta a reseñas, estadísticas básicas. Reciben un correo cuando llega una solicitud o una reseña, y pueden recuperar su contraseña.
-- **Planes:** Básico ($25.000/mes) y Premium ($65.000/mes) pagados con Wompi Web Checkout. El plan se activa por webhook y por verificación directa; vence solo a los 30 días.
+- **Dueños de negocio:** registro, crear/editar/eliminar negocios, logo y fotos (Cloudinary), horario de atención, bandeja de solicitudes, respuesta a reseñas, estadísticas básicas. Reciben un correo cuando llega una solicitud o una reseña, y pueden recuperar su contraseña. El panel muestra la actividad de los últimos 30 días, incluidos los clics en WhatsApp y en llamar.
+- **Planes:** Básico ($25.000/mes) y Premium ($65.000/mes) pagados con Wompi Web Checkout. El plan se activa por webhook y por verificación directa; vence solo a los 30 días, con un correo de aviso 5 días antes y otro al vencer.
 - **Administración (`/admin`):** métricas, aprobar/suspender/destacar negocios, activar planes a mano (transferencia, Nequi), moderar reseñas, usuarios.
 
 ## Desarrollo local
@@ -36,7 +36,7 @@ Para probar sin MySQL: `DATABASE_URL=sqlite:///./dev.db`.
 Pruebas y verificación:
 
 ```bash
-cd backend && pytest          # 24 pruebas (usa SQLite temporal)
+cd backend && pytest          # 30 pruebas (usa SQLite temporal)
 cd frontend && npm run lint && npm run build
 ```
 

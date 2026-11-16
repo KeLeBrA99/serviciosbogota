@@ -83,6 +83,9 @@ export const businessAPI = {
   update: (id, data) => api.put(`/businesses/${id}`, data),
   remove: (id) => api.delete(`/businesses/${id}`),
   myBusinesses: () => api.get("/businesses/my"),
+  stats: (id) => api.get(`/businesses/${id}/stats`),
+  // Clic en WhatsApp o llamar. Nunca debe interrumpir al visitante: los errores se ignoran.
+  track: (id, type) => api.post(`/businesses/${id}/track`, { type }).catch(() => {}),
   uploadLogo: (id, file) => upload(`/businesses/${id}/logo`, file),
   uploadCover: (id, file) => upload(`/businesses/${id}/cover`, file),
   uploadPhoto: (id, file) => upload(`/businesses/${id}/photos`, file),
