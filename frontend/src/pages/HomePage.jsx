@@ -108,7 +108,8 @@ export default function HomePage() {
       </section>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-6 no-scrollbar">
+        {/* En celular la fila se desliza; en escritorio se parte en varias líneas para que no quede cortada */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-6 no-scrollbar md:flex-wrap md:overflow-visible">
           <button onClick={() => setFilter("categoria", "")} className={chip(!category)}>⚡ Todos</button>
           {categories.map((cat) => (
             <button key={cat.id} onClick={() => setFilter("categoria", cat.slug)} className={chip(category === cat.slug)}>
